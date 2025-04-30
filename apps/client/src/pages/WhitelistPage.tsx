@@ -6,7 +6,7 @@ export default function WhitelistPage() {
   const [list, setList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
-
+  const [sourceData, setSourceData] = useState<any>(null);
   const loadData = () => {
     request.get('/whitelist').then(res => {
       setList(res.data);
@@ -17,7 +17,7 @@ export default function WhitelistPage() {
     loadData();
   }, []);
 
-  const filteredList = filter ? list.filter((item: any) => item.level === filter) : list;
+  const filteredList = filter ? list.filter((item: any) => item.riskLevel === filter) : list;
 
   const handleReevaluate = async (record: any) => {
     try {
@@ -44,23 +44,58 @@ export default function WhitelistPage() {
   };
 
   const columns = [
-    { title: '扩展名称', dataIndex: 'name', key: 'name' },
-    { title: 'ID', dataIndex: 'id', key: 'id' },
+    {
+      title: '扩展名称',
+      dataIndex: 'name',
+      key: 'name',
+      width: 120
+    },
+    { 
+      title: 'ID', 
+      dataIndex: 'id', 
+      key: 'id',
+      width: 120
+    },
+    { 
+      title: '版本', 
+      dataIndex: 'version', 
+      key: 'version',
+      width: 120,
+    },
+    {
+      title: '权限',
+      dataIndex: 'permissions',
+      key: 'permissions',
+      width: 120,
+      render: (text: string[]) => (
+        <div>
+          {text.map((item, index) => (
+            <Tag key={index} color="blue">{item}</Tag>
+          ))}
+        </div>
+      )
+    },
     {
       title: '风险等级',
-      dataIndex: 'level',
-      key: 'level',
+      dataIndex: 'riskLevel',
+      key: 'riskLevel',
+      width: 120,
       render: (text: string) => {
         const color = text === '高风险' ? 'red' : text === '中风险' ? 'orange' : 'green';
         return <Tag color={color}>{text}</Tag>;
       }
     },
-    { title: '评分', dataIndex: 'score', key: 'score' },
+    { title: '评分', dataIndex: 'score', key: 'score', width: 120 },
     {
       title: '操作',
+      minWidth: 100,
       render: (_: any, record: any) => (
         <>
           <Button type="link" onClick={() => handleReevaluate(record)}>重新评估</Button>
+          <Button type="link" onClick={() => {
+            setSourceData(record);
+            setModalOpen(true);
+          }}>编辑</Button>
           <Popconfirm
             title="确定删除该扩展？"
             onConfirm={() => handleDelete(record.id)}
@@ -73,27 +108,33 @@ export default function WhitelistPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 800, margin: '24px auto' }}>
+    <div style={{ margin: '24px auto' }}>
       <div style={{ marginBottom: 16 }}>
         <Select
           placeholder="按风险等级筛选"
-          style={{ width: 200 }}
+          style={{ width: 200, marginRight: 16 }}
           allowClear
           onChange={value => setFilter(value)}
         >
-          <Select.Option value="高风险">高风险</Select.Option>
-          <Select.Option value="中风险">中风险</Select.Option>
-          <Select.Option value="低风险">低风险</Select.Option>
+          <Select.Option value="high">高风险</Select.Option>
+          <Select.Option value="medium">中风险</Select.Option>
+          <Select.Option value="low">低风险</Select.Option>
         </Select>
         <Button type="primary" onClick={() => setModalOpen(true)}>
           添加
         </Button>
       </div>
-      <Table rowKey="id" dataSource={filteredList} columns={columns} pagination={false} />
+      <Table
+        rowKey="id"
+        dataSource={filteredList}
+        columns={columns}
+        pagination={false}
+        bordered />
       <AddExtensionModal
         open={modalOpen}
         api="/whitelist"
         onClose={() => setModalOpen(false)}
+        sourceData={sourceData}
         onSuccess={() => {
           setModalOpen(false);
           loadData();
