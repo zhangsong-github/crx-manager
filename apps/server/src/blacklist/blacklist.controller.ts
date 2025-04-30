@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { BlacklistService } from './blacklist.service';
 
 @Controller('blacklist')
@@ -8,6 +8,10 @@ export class BlacklistController {
   @Post()
   async add(@Body() body: any) {
     return await this.blacklistService.addExtension(body);
+  }
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() body: any) {
+    return await this.blacklistService.updateExtension(id, body);
   }
 
   @Get()

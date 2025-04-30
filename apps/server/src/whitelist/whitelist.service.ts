@@ -9,13 +9,52 @@ redis.connect();
 export class WhitelistService {
   constructor(private readonly riskService: RiskService) {}
 
-  async addExtension({ id, name, permissions, chromeStoreInfo }: any) {
+  async addExtension({ id, name, version, permissions,  description, chromeStoreInfo }: any) {
+    const key = `whitelist:${id}`;
+    const existing = await redis.get(key);
+    if (existing) {
+      console.log(`Extension ${id} already exists in whitelist`);
+      return JSON.parse(existing);
+    }
     // TODO: get chromeStoreInfo from Chrome Web Store API
     const risk = this.riskService.evaluateRisk({ permissions, chromeStoreInfo });
+    const extensionData = {
+      id,
+      name,
+      version,
+      permissions,
+      description,
+      chromeStoreInfo,
+      ...risk,
+    };
+    await redis.set(key, JSON.stringify(extensionData));
+    console.log(`Extension ${id} added to whitelist with risk level: ${risk.riskLevel}`);
+    return extensionData;
+  }
+
+  async updateExtension(id: string, { name, permissions, version, description, chromeStoreInfo }: any) {
     const key = `whitelist:${id}`;
-    await redis.set(key, JSON.stringify({ id, name, ...risk, permissions }));
-    console.log(`Extension ${id} added to whitelist with risk level: ${risk.level}`);
-    return { id, name, ...risk };
+    const existing = await redis.get(key);
+    if (!existing) {
+      console.log(`Extension ${id} not exists in whitelist`);
+      return { 
+        success: false,
+        errMsg: `Extension ${id} not exists in whitelist`
+      };
+    }
+    const risk = this.riskService.evaluateRisk({ permissions, chromeStoreInfo });
+    const extensionData = {
+      id,
+      name,
+      version,
+      permissions,
+      description,
+      chromeStoreInfo,
+      ...risk,
+    };
+    await redis.set(key, JSON.stringify(extensionData));
+    console.log(`Extension ${id} updated in whitelist with risk level: ${risk.riskLevel}`);
+    return extensionData;
   }
 
   async listExtensions() {

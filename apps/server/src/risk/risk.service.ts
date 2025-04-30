@@ -1,18 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
-
-const PERMISSION_WEIGHTS: Record<string, number> = {
-  webRequest: 30,
-  webRequestBlocking: 30,
-  tabs: 15,
-  storage: 5,
-  cookies: 20,
-  history: 20,
-  clipboardRead: 10,
-  clipboardWrite: 10,
-  downloads: 20,
-  management: 25,
-};
+import { PERMISSION_WEIGHTS, type PermissionRiskLevel, type PermissionItem } from './permissions.constants';
 
 @Injectable()
 export class RiskService {
@@ -25,8 +13,16 @@ export class RiskService {
       publisherExtensionCount?: number;
     };
   }) {
+    const permissionItems: PermissionItem[] = [];
     const permissionRiskScore = input.permissions.reduce((total, perm) => {
-      return total + (PERMISSION_WEIGHTS[perm.trim()] || 5);
+      const permissionItem = PERMISSION_WEIGHTS[perm.trim()];
+      if (permissionItem) {
+        permissionItems.push({
+          name: perm.trim(),
+          ...permissionItem,
+        });
+      }
+      return total + (permissionItem?.score || 0);
     }, 0);
 
     let storeScore = 0;
@@ -36,10 +32,16 @@ export class RiskService {
     const { chromeStoreInfo } = input;
 
     if (chromeStoreInfo) {
-      storeScore = chromeStoreInfo.rating ? chromeStoreInfo.rating * 20 : 0;
+      const { rating } = chromeStoreInfo;
+      // storeScore = chromeStoreInfo.rating ? (chromeStoreInfo.rating < 2 ? : ) : 0;
+      if(rating) {
+        // 评分越低，风险分数越高
+        storeScore = rating < 2 ? 100 : rating < 3 ? 80 : rating < 4 ? 60 : rating < 4.5 ? 40 : 20;
+      }
       if (chromeStoreInfo.lastUpdated) {
         const monthsAgo = dayjs().diff(dayjs(chromeStoreInfo.lastUpdated), 'month');
-        updateScore = monthsAgo < 3 ? 20 : monthsAgo < 6 ? 10 : 0;
+        // 更新时间越久，风险分数越高
+        updateScore = monthsAgo < 3 ? 10 : monthsAgo < 6 ? 20 : 50;
       }
       if (chromeStoreInfo.publisherExtensionCount !== undefined) {
         developerScore = chromeStoreInfo.publisherExtensionCount >= 5 ? 20 : 10;
@@ -51,13 +53,36 @@ export class RiskService {
       ? permissionRiskScore * 0.6 + storeScore * 0.2 + updateScore * 0.1 + developerScore * 0.1
       : permissionRiskScore;
 
-    let riskLevel: '低风险' | '中风险' | '高风险' = '低风险';
-    if (finalScore >= 80) riskLevel = '高风险';
-    else if (finalScore >= 50) riskLevel = '中风险';
+    let riskLevel: PermissionRiskLevel = 'low';
+    // 风险等级
+    riskLevel = finalScore >= 80 ? 'high' : finalScore >= 50 ? 'medium' : 'low';
 
     return {
       score: Math.round(finalScore),
-      level: riskLevel,
+      riskLevel,
+      permissionItems
     };
+  }
+
+  getPermissionMap() {
+    return PERMISSION_WEIGHTS;
+  }
+
+  getPermission(name: string) {
+    const permission = PERMISSION_WEIGHTS[name];
+    if (!permission) {
+      return null;
+    }
+    return {
+      name,
+      ...permission,
+    };
+  }
+
+  getPermissions() {
+    return Object.entries(PERMISSION_WEIGHTS).map(([key, value]) => ({
+      name: key,
+      ...value,
+    }));
   }
 }
