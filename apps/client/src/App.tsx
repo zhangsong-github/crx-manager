@@ -5,8 +5,10 @@ import WhitelistPage from './pages/WhitelistPage';
 import BlacklistPage from './pages/BlacklistPage';
 import 'antd/dist/reset.css';
 import { Layout, Menu } from 'antd';
+import { PermissionProvider } from './contexts/PermissionContext';
 
 const { Header, Content } = Layout;
+
 
 const AppRouter = () => {
   const location = useLocation();
@@ -37,9 +39,11 @@ const AppRouter = () => {
 const App = () => {
   return (
     <React.StrictMode>
-      <BrowserRouter>
-        <AppRouter />
-      </BrowserRouter>
+      <PermissionProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </PermissionProvider>
     </React.StrictMode>
   )
 }

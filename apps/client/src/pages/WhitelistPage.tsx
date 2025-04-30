@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Table, Tag, Button, Select, message, Popconfirm } from 'antd';
+import { Table, Tag, Button, Select, message, Popconfirm, Tooltip } from 'antd';
 import request from '../services/axios';
+import { usePermissions, RiskLevel, RiskColor } from '../contexts/PermissionContext';
 import AddExtensionModal from './AddExtensionModal';
+
 export default function WhitelistPage() {
+
   const [list, setList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
@@ -12,6 +15,9 @@ export default function WhitelistPage() {
       setList(res.data);
     });
   };
+
+  // const { permissionMap } = usePermissions();
+
 
   useEffect(() => {
     loadData();
@@ -54,7 +60,7 @@ export default function WhitelistPage() {
       title: 'ID', 
       dataIndex: 'id', 
       key: 'id',
-      width: 120
+      width: 100
     },
     { 
       title: '版本', 
@@ -64,14 +70,20 @@ export default function WhitelistPage() {
     },
     {
       title: '权限',
-      dataIndex: 'permissions',
-      key: 'permissions',
-      width: 120,
-      render: (text: string[]) => (
+      dataIndex: 'permissionItems',
+      key: 'permissionItems',
+      minWidth: 150,
+      render: (items: any[]) => (
         <div>
-          {text.map((item, index) => (
-            <Tag key={index} color="blue">{item}</Tag>
-          ))}
+          {
+            items.map((item, index) => {
+              const riskText = RiskLevel[item.riskLevel as keyof typeof RiskLevel] || '未知风险';
+              const color = RiskColor[item.riskLevel as keyof typeof RiskColor] || 'default';
+              return <Tooltip placement="topLeft" title={`${item.description}，${riskText}，风险分值：${item.score}`}>
+                <Tag key={index} color={color}>{item.name}</Tag>
+            </Tooltip>;
+            })
+          }
         </div>
       )
     },
@@ -81,8 +93,10 @@ export default function WhitelistPage() {
       key: 'riskLevel',
       width: 120,
       render: (text: string) => {
-        const color = text === '高风险' ? 'red' : text === '中风险' ? 'orange' : 'green';
-        return <Tag color={color}>{text}</Tag>;
+        const color = RiskColor[text as keyof typeof RiskColor];
+        return <Tag color={color}>
+          {RiskLevel[text as keyof typeof RiskLevel]}
+        </Tag>;
       }
     },
     { title: '评分', dataIndex: 'score', key: 'score', width: 120 },
@@ -91,7 +105,7 @@ export default function WhitelistPage() {
       minWidth: 100,
       render: (_: any, record: any) => (
         <>
-          <Button type="link" onClick={() => handleReevaluate(record)}>重新评估</Button>
+          {/* <Button type="link" onClick={() => handleReevaluate(record)}>重新评估</Button> */}
           <Button type="link" onClick={() => {
             setSourceData(record);
             setModalOpen(true);
