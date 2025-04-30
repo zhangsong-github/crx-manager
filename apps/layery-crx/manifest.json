@@ -1,0 +1,17 @@
+{
+  "name": "LayerY",
+  "version": "1.0",
+  "description": "",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open Side Panel"
+  },
+  "side_panel": {
+    "default_path": "option.html",
+    "openPanelOnActionClick": true
+  },
+  "permissions": ["management", "sidePanel"]
+}
