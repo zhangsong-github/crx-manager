@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Select, message, Popconfirm } from 'antd';
 import request from '../services/axios';
+import AddExtensionModal from './AddExtensionModal';
 
 export default function BlackListPage() {
   const [list, setList] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
 
   const loadData = () => {
@@ -84,8 +86,20 @@ export default function BlackListPage() {
           <Select.Option value="中风险">中风险</Select.Option>
           <Select.Option value="低风险">低风险</Select.Option>
         </Select>
+        <Button type="primary" onClick={() => setModalOpen(true)}>
+          添加
+        </Button>
       </div>
       <Table rowKey="id" dataSource={filteredList} columns={columns} pagination={false} />
+      <AddExtensionModal
+        open={modalOpen}
+        api="/blacklist"
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => {
+          setModalOpen(false);
+          loadData();
+        }}
+      />
     </div>
   );
 }
