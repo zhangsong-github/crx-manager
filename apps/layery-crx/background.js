@@ -1,40 +1,37 @@
+import { getWhiteList, getBlackList } from './api.js';
+let whiteList = [];
+let blackList = [];
+
 function checkExtInfo(extension) {
   console.log('扩展名称:', extension.name);
   console.log('扩展ID:', extension.id);
   console.log('权限:', extension.permissions);
 
-  // const whiteList = [
-  //   'gllnadijjjmfkbomhanhnejkmmafnnck',
-  //   'fdpohaocaechififmbbbbbknoalclacl'
-  //   'llgbkkilgplgcglghlcclgioapjmbhim',
-  // ];
-  // const blackList = [
-  //   'abpdnfjocnmdomablahdcfnoggeeiedb',
-  //   'mdnleldcmiljblolnjhpnblkcekpdkpa'
-  // ];
-  // if(whiteList.includes(extension.id)) {
-  //   console.log('白名单扩展');
-  //   chrome.management.setEnabled(extension.id, true, () => {
-  //     console.log(`扩展 ${extension.name} 已被强制启用`);
-  //   });
-  // } else {
-  //   if(blackList.includes(extension.id)) {
-  //     console.log('黑名单扩展');
-  //     chrome.management.uninstall(extension.id, { showConfirmDialog: true }, () => {
-  //       console.log(`扩展 ${extension.name} 已被卸载`);
-  //     });
-  //   } else {
-  //     chrome.management.setEnabled(extension.id, false, () => {
-  //       console.log(`扩展 ${extension.name} 已被强制禁用`);
-  //     });
-  //   }
-
-  // }
+  if(whiteList.includes(extension.id)) {
+    console.log('白名单扩展');
+    chrome.management.setEnabled(extension.id, true, () => {
+      console.log(`白名单扩展 ${extension.name} 已被强制启用`);
+    });
+  }
+  if(blackList.includes(extension.id)) {
+    console.log('黑名单扩展');
+    chrome.management.setEnabled(extension.id, false, () => {
+      console.log(`扩展 ${extension.name} 已被强制禁用`);
+    });
+    // chrome.management.uninstall(extension.id, { showConfirmDialog: true }, () => {
+    //   console.log(`扩展 ${extension.name} 已被卸载`);
+    // });
+  }
   console.log('----------------------------------');
 }
 
+async function checkAllExtPermissions() {
+  
+  whiteList = (await getWhiteList()).map(item => item.id);
+  blackList = (await getBlackList()).map(item => item.id);
+  console.log('白名单:', whiteList);
+  console.log('黑名单:', blackList);
 
-function showAllExtPermissions() {
   chrome.management.getAll((extensions) => {
     const extensionsList = extensions.filter(ext => ext.type === 'extension');
     // 遍历每个扩展，提取权限信息
@@ -43,7 +40,6 @@ function showAllExtPermissions() {
     });
   });
 }
-
 
 function addListener() {
   chrome.management.onEnabled.addListener(extensionInfo => {
@@ -65,7 +61,7 @@ function addListener() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  showAllExtPermissions();
+  checkAllExtPermissions();
   addListener();
 });
 

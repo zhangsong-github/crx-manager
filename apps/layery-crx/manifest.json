@@ -1,10 +1,11 @@
 {
   "name": "LayerY",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "",
   "manifest_version": 3,
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "Open Side Panel"

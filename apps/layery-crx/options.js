@@ -1,81 +1,6 @@
-// /options.js
+import { getPermissionMap } from './api.js';
 
-const permissionDescriptions = {
-  tabs: '访问浏览器标签页',
-  storage: '使用本地存储功能',
-  notifications: '显示桌面通知',
-  background: '后台运行支持',
-  bookmarks: '管理书签',
-  history: '访问浏览历史',
-  cookies: '访问/编辑Cookies',
-  webRequest: '拦截和修改网络请求，有可能窃取用户隐私信息',
-  webRequestBlocking: '拦截和修改网络请求（阻塞），有可能窃取用户隐私信息',
-  contextMenus: '添加上下文菜单',
-  alarms: '设置定时器和闹钟',
-  downloads: '访问下载任务',
-  'downloads.shelf': '显示当前正在下载的文件列表和状态', 
-  geolocation: '访问地理位置',
-  clipboardRead: '读取剪贴板内容，有可能窃取用户隐私信息',
-  clipboardWrite: '写入剪贴板内容，有可能注入恶意代码',
-  activeTab: '访问当前活动标签页',
-  management: '管理扩展程序，有可能会影响浏览器的安全性和隐私',
-  history: '访问浏览历史记录，有数据泄露的风险',
-  topSites: '访问常用网站',
-  bookmarks: '访问书签',
-  pageCapture: '捕获页面内容，有数据泄露的风险',
-  identity: '访问用户身份信息，有数据泄露的风险',
-  webNavigation: '访问浏览器导航事件，有可能会影响浏览器的安全性和隐私',
-  webview: '使用WebView标签',
-  declarativeNetRequest: '声明式网络请求，有可能会影响浏览器的安全性和隐私',
-  declarativeNetRequestFeedback: '声明式网络请求反馈，有可能会影响浏览器的安全性和隐私',
-  enterprise: '企业管理功能',
-  fileSystem: '访问文件系统，有数据泄露的风险',
-  unlimitedStorage: '使用无限存储空间，不受存储限制',
-  devtools: '访问开发者工具， 有可能会影响浏览器的安全性和隐私',
-  scripting: '访问脚本功能，如注入脚本，有窃取用户信息的风险',
-  // 可以继续补充其他常见权限
-};
-
-const highRiskPermissions = [
-  'cookies',
-  'webRequest',
-  'webRequestBlocking',
-  'downloads',
-  'downloads.shelf',
-  'clipboardRead',
-  'clipboardWrite',
-  'management',
-  'history',
-  'fileSystem',
-  'declarativeNetRequest',
-  'declarativeNetRequestFeedback',
-  'pageCapture',
-  'identity',
-  'geolocation',
-  'devtools',
-  'scripting',
-];
-const mediumRiskPermissions = [
-  'tabs',
-  'storage',
-  'notifications',
-  'background',
-  'bookmarks',
-  'activeTab',
-  'unlimitedStorage',
-  'contextMenus',
-  'webNavigation',
-]
-const lowRiskPermissions = [
-  'alarms',
-  'topSites',
-  'webview',
-  'enterprise',
-]
-
-document.addEventListener('DOMContentLoaded', () => {
-  initExtensionsList();
-});
+let permissionMap = {};
 
 function initExtensionsList() {
   const appContainer = document.getElementById('app');
@@ -112,9 +37,10 @@ function loadExtensions() {
       const isSelf = ext.id === chrome.runtime.id;
       const permissions = ext.permissions || [];
       const riskList = permissions.map(p => {
-        if (highRiskPermissions.includes(p)) return 'high';
-        if (mediumRiskPermissions.includes(p)) return 'medium';
-        if (lowRiskPermissions.includes(p)) return 'low';
+        const riskLevel = permissionMap[p] && permissionMap[p].riskLevel;
+        if (riskLevel === 'high') return 'high';
+        if(riskLevel === 'medium') return 'medium';
+        if(riskLevel === 'low') return 'low';
         return 'unknown';
       });
       const riskLevel = riskList.includes('high') ? 'high' : riskList.includes('medium') ? 'medium' : riskList.includes('low') ? 'low' : 'unknown';
@@ -128,7 +54,7 @@ function loadExtensions() {
           ${riskLevel === 'high' ? '高风险' : riskLevel === 'medium' ? '中风险' : riskLevel === 'low' ? '低风险' : '未知风险'}
         </span>
       </td>
-      <td width="20%">${ext.enabled ? '已启用' : '已禁用'}</td>
+      <td width="20%" class="status">${ext.enabled ? '已启用' : '已禁用'}</td>
       <td width="15%" style="min-width: 110px;">
         ${
           isSelf
@@ -156,15 +82,14 @@ function bindTableEvents() {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const extId = btn.dataset.id;
-      const enable = btn.dataset.status === 'true' ? false : true;
-
-      chrome.management.setEnabled(extId, enable, () => {
+      const enabled = btn.dataset.status === 'true' ? false : true;
+      chrome.management.setEnabled(extId, enabled, () => {
         if (chrome.runtime.lastError) {
           console.error('操作失败:', chrome.runtime.lastError);
           alert(`操作失败: ${chrome.runtime.lastError.message}`);
           return;
         }
-        updateExtensionRow(extId);
+        updateExtensionRow(extId, enabled);
       });
     });
   });
@@ -177,16 +102,15 @@ function bindTableEvents() {
   });
 }
 
-function updateExtensionRow(extId) {
-  chrome.management.get(extId, ext => {
-    const tr = document.querySelector(`tr[data-id="${extId}"]`);
-    if (tr) {
-      tr.querySelector('td:nth-child(3)').textContent = ext.enabled ? '已启用' : '已禁用';
-      const toggleBtn = tr.querySelector('.toggle-btn');
-      toggleBtn.textContent = ext.enabled ? '禁用' : '启用';
-      toggleBtn.dataset.status = ext.enabled;
-    }
-  });
+function updateExtensionRow(extId, enabled) {
+  const tr = document.querySelector(`tr[data-id="${extId}"]`);
+  if (tr) {
+    const statusCell = tr.querySelector('.status');
+    statusCell.textContent = enabled ? '已启用' : '已禁用';
+    const toggleBtn = tr.querySelector('.toggle-btn');
+    toggleBtn.textContent = enabled ? '禁用' : '启用';
+    toggleBtn.dataset.status = enabled;
+  }
 }
 
 function showPermissionsDialog(permissions) {
@@ -197,11 +121,13 @@ function showPermissionsDialog(permissions) {
   const dialog = document.createElement('div');
   dialog.className = 'permissions-dialog';
   const permissionList = permissions.map(p => {
-    const desc = permissionDescriptions[p.trim()] || '未知权限';
-    const riskLevel = highRiskPermissions.includes(p) ? 'high' : mediumRiskPermissions.includes(p) ? 'medium' : lowRiskPermissions.includes(p) ? 'low' : 'unknown'; 
+    if (p.trim() === '') return '';
+    const permission = permissionMap[p.trim()];
+    const description = permission.description || '未知权限';
+    const riskLevel = permission.riskLevel || '未知风险';
     return `<div class="permission-item">
       <span class="title" title="${p}">${p}</span>
-      <span class="desc" title="${desc}">${desc}</span>
+      <span class="desc" title="${description}">${description}</span>
       <span class="tag-list">
         ${riskLevel === 'high' ? '<span class="tag danger">高风险</span>' : ''}
         ${riskLevel === 'medium' ? '<span class="tag warning">中风险</span>' : ''}
@@ -232,3 +158,8 @@ function showPermissionsDialog(permissions) {
 
   document.body.appendChild(dialog);
 }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  permissionMap = await getPermissionMap();
+  initExtensionsList();
+});
