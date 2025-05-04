@@ -160,6 +160,16 @@ function showPermissionsDialog(permissions) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const toggle = document.getElementById('toggleBlock');
+
+  chrome.storage.sync.get('blockEnabled', ({ blockEnabled }) => {
+    toggle.checked = blockEnabled !== false; // default true
+  });
+
+  toggle.addEventListener('change', () => {
+    chrome.storage.sync.set({ blockEnabled: toggle.checked });
+  });
+  
   permissionMap = await getPermissionMap();
   initExtensionsList();
 });
