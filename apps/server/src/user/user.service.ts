@@ -36,7 +36,7 @@ export class UserService {
     }
     await redis.set(key, JSON.stringify(userData));
     console.log(`User ${id} added to users success.`);
-    return ;
+    return userData;
   }
   
   async updateUser({id, extensions}: { id: string; extensions: extensionInfo[] }) {
