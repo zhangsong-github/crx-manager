@@ -122,7 +122,7 @@ function showPermissionsDialog(permissions) {
   dialog.className = 'permissions-dialog';
   const permissionList = permissions.map(p => {
     if (p.trim() === '') return '';
-    const permission = permissionMap[p.trim()];
+    const permission = permissionMap[p.trim()] || {};
     const description = permission.description || '未知权限';
     const riskLevel = permission.riskLevel || '未知风险';
     return `<div class="permission-item">
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   toggle.addEventListener('change', () => {
     chrome.storage.sync.set({ blockEnabled: toggle.checked });
   });
-  
+
   permissionMap = await getPermissionMap();
   initExtensionsList();
 });

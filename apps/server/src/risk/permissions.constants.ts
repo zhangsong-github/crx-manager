@@ -13,6 +13,21 @@ export type PermissionMap = {
 
 export const PERMISSION_WEIGHTS: PermissionMap = {
   // ========== 高风险权限 (High) ==========
+  "declarativeNetRequest": {
+    score: 40,
+    riskLevel: "high",
+    description: "完全控制网络请求，可能监控所有网络流量"
+  },
+  "scripting": {
+    score: 38,
+    riskLevel: "high",
+    description: "注入脚本到任意页面，可能获取敏感数据"
+  },
+  "devtools": {
+    score: 35,
+    riskLevel: "high",
+    description: "访问Chrome开发者工具，可能获取敏感信息"
+  },
   "cookies": {
     score: 25,
     riskLevel: "high",
@@ -159,6 +174,11 @@ export const PERMISSION_WEIGHTS: PermissionMap = {
     score: 16,
     riskLevel: "medium",
     description: "管理下载文件，可能下载恶意内容"
+  },
+  "downloads.shelf": {
+    score: 11,
+    riskLevel: "medium",
+    description: "管理下载栏，可能诱导用户操作"
   },
   "fontSettings": {
     score: 8,
