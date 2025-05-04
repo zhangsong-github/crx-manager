@@ -28,7 +28,7 @@ export class UserService {
     // TODO: get chromeStoreInfo from Chrome Web Store API
     extensions = extensions.map(extension => ({
       ...extension,
-      risk: this.riskService.evaluateRisk({ ...extension, permissions: extension.permissions || []}),
+      ...this.riskService.evaluateRisk({ ...extension, permissions: extension.permissions || []}),
     }));
     const userData = {
       id,
@@ -51,7 +51,7 @@ export class UserService {
       const risk = this.riskService.evaluateRisk({ ...extension, permissions: extension.permissions || [] });
       return {
         ...extension,
-        risk,
+        ...risk,
       };
     });
     

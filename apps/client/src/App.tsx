@@ -3,6 +3,7 @@ import '@ant-design/v5-patch-for-react-19';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import WhitelistPage from './pages/WhitelistPage';
 import BlacklistPage from './pages/BlacklistPage';
+import UserListPage from './pages/UserListPage';
 import 'antd/dist/reset.css';
 import { Layout, Menu } from 'antd';
 import { PermissionProvider } from './contexts/PermissionContext';
@@ -21,7 +22,8 @@ const AppRouter = () => {
           selectedKeys={[location.pathname]}
           items={[
             { key: '/whitelist', label: <Link to="/whitelist">白名单列表</Link> },
-            { key: '/blacklist', label: <Link to="/blacklist">黑名单列表</Link> }
+            { key: '/blacklist', label: <Link to="/blacklist">黑名单列表</Link> },
+            { key: '/users', label: <Link to="/users">用户列表</Link> },
           ]}
         />
       </Header>
@@ -29,6 +31,7 @@ const AppRouter = () => {
         <Routes>
           <Route path="/whitelist" element={<WhitelistPage />} />
           <Route path="/blacklist" element={<BlacklistPage />} />
+          <Route path="/users" element={<UserListPage />} />
           <Route path="*" element={<WhitelistPage />} />
         </Routes>
       </Content>
