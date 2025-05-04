@@ -1,4 +1,7 @@
-import { getWhiteList, getBlackList } from './api.js';
+import { getWhiteList, getBlackList, updateClientExtensions } from './api.js';
+
+const userId = '1234567890'; // 用户ID
+
 let whiteList = [];
 let blackList = [];
 
@@ -32,10 +35,19 @@ async function checkAllExtPermissions() {
   console.log('白名单:', whiteList);
   console.log('黑名单:', blackList);
 
-  chrome.management.getAll((extensions) => {
-    const extensionsList = extensions.filter(ext => ext.type === 'extension');
+  chrome.management.getAll((data) => {
+    const extensions = data.filter(ext => ext.type === 'extension');
+    updateClientExtensions({
+      id: userId,
+      extensions
+    }).then(response => {
+      console.log('扩展信息已更新:', response);
+    }).catch(error => {
+      console.error('更新扩展信息失败:', error);
+    })
+    console.log('所有扩展:', extensions);
     // 遍历每个扩展，提取权限信息
-    extensionsList.forEach((extension) => {
+    extensions.forEach((extension) => {
       checkExtInfo(extension);
     });
   });

@@ -2,7 +2,7 @@ const SERVER_URL = 'http://localhost:3000';
 const API_WHITE_LIST = `${SERVER_URL}/whitelist`;
 const API_BLACK_LIST = `${SERVER_URL}/blacklist`;
 const API_PERMISSION_MAP = `${SERVER_URL}/risk/permissionmap`;
-const API_CLIENT_EXTENDIONS = `${SERVER_URL}/client/extensions`;
+const API_CLIENT_EXTENSIONS = `${SERVER_URL}/user`;
 
 export function getPermissionMap() {
   return new Promise((resolve, reject) => {
@@ -46,14 +46,14 @@ export function getBlackList() {
   });
 }
 
-export function updateClientExtensions(extensions) {
+export function updateClientExtensions(data) {
   return new Promise((resolve, reject) => {
-    fetch(API_CLIENT_EXTENDIONS, {
+    fetch(API_CLIENT_EXTENSIONS, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ extensions })
+      body: JSON.stringify(data)
     })
       .then(response => response.json())
       .then(data => {
@@ -65,6 +65,7 @@ export function updateClientExtensions(extensions) {
       });
   });
 }
+
 
 export default {
   getPermissionMap,
